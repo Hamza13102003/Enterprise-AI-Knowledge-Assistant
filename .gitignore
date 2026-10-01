@@ -1,0 +1,17 @@
+﻿# Personal local notes
+.txt
+test_docker.txt
+
+# Environment / Secrets
+.env
+.env.*
+!.env.example
+
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+# Python environments
+.venv/
+venv/
+env/

@@ -1,0 +1,96 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+
+    container_name: enterprise_ai_backend
+
+    ports:
+      - "8000:8000"
+
+    environment:
+      APP_NAME: Enterprise AI Knowledge Assistant
+      APP_ENV: production
+      DEBUG: "false"
+
+      HOST: 0.0.0.0
+      PORT: 8000
+
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY must be set}
+      ACCESS_TOKEN_EXPIRE_MINUTES: 60
+
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/enterprise_ai_db
+
+      QDRANT_HOST: qdrant
+      QDRANT_PORT: 6333
+
+      OLLAMA_HOST: http://host.docker.internal:11434
+      OLLAMA_MODEL: qwen2.5:3b
+
+      RAG_RETRIEVAL_THRESHOLD: 0.65
+      RAG_RELEVANCE_THRESHOLD: 0.65
+
+      LOG_LEVEL: INFO
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+      qdrant:
+        condition: service_started
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    restart: unless-stopped
+
+
+  postgres:
+    image: postgres:16-alpine
+
+    container_name: enterprise_ai_postgres
+
+    environment:
+      POSTGRES_DB: enterprise_ai_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U postgres -d enterprise_ai_db"
+        ]
+
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    restart: unless-stopped
+
+
+  qdrant:
+    image: qdrant/qdrant:latest
+
+    container_name: enterprise_ai_qdrant
+
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+    restart: unless-stopped
+
+
+volumes:
+  postgres_data:
+  qdrant_data:
